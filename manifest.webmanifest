@@ -1,0 +1,26 @@
+{
+  "name": "HaiBer Gestion",
+  "short_name": "HaiBer",
+  "description": "Gestion hors ligne HaiBer Multi-Services : devis, production, clients, factures, stocks, galerie et motion design.",
+  "lang": "fr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#3A4F9E",
+  "icons": [
+    {
+      "src": "assets/ic_launcher_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/ic_launcher_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
