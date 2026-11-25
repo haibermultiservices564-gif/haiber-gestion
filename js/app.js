@@ -6,6 +6,27 @@
 
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const SITE_ORDERS_KEY = 'haiber_site_orders_v1';
+
+  function siteOrders() {
+    try {
+      const v = JSON.parse(localStorage.getItem(SITE_ORDERS_KEY) || '[]');
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function saveSiteOrders(list) {
+    try { localStorage.setItem(SITE_ORDERS_KEY, JSON.stringify(list.slice(0, 100))); } catch (e) {}
+  }
+  function unreadSiteOrders() { return siteOrders().filter(o => !o.seen); }
+  function setSiteOrderSeen(id, seen) {
+    const list = siteOrders();
+    const item = list.find(o => o.id === id);
+    if (!item) return;
+    item.seen = !!seen;
+    saveSiteOrders(list);
+    refreshSiteOrderIndicators();
+    if (page === 'site-orders') vSiteOrders();
+  }
 
   function printDoc(title, subtitle, rows, note) {
     const org = Store.org();
@@ -33,6 +54,7 @@
     { id: 'home', label: 'Accueil', icon: '⌂' },
     { id: 'quotes', label: 'Devis', icon: '₣' },
     { id: 'orders', label: 'Commandes', icon: '▤' },
+    { id: 'site-orders', label: 'Commandes du site', icon: '🌐' },
     { id: 'production', label: 'Production', icon: '▣' },
     { id: 'history', label: 'Historique', icon: '⏱' },
     { group: 'Gestion' },
@@ -53,7 +75,9 @@
 
   const TITLES = {
     home: ['Accueil', 'Tableau de bord'], quotes: ['Devis', 'Moteur de coûts partagé'],
-    orders: ['Commandes', 'Suivi des commandes'], production: ['Production', 'Suivi par poste'],
+    orders: ['Commandes', 'Suivi des commandes'],
+    'site-orders': ['Commandes du site', 'Demandes reçues depuis la boutique HaiBer'],
+    production: ['Production', 'Suivi par poste'],
     history: ['Historique', 'Toutes les productions passées'],
     clients: ['Clients', 'Annuaire client'], invoices: ['Factures', 'Facturation et conformité'],
     payments: ['Paiements', 'Mobile money et virements'], cash: ['Caisse', 'Vente rapide et clôture'],
@@ -210,7 +234,7 @@
     $('#org-badge').innerHTML = `<span class="dot"></span><span>${UI.esc(org.name)}</span>${Store.isDemo() ? '<span class="chip warn" style="margin-left:6px">DÉMO</span>' : ''}`;
     $('#side-nav').innerHTML = NAV.map(n => n.group
       ? `<div class="nav-group">${n.group}</div>`
-      : `<button class="nav-item" data-page="${n.id}"><span class="ico">${n.icon}</span>${n.label}${n.id === 'orders' ? `<span class="badge">${Store.orders().length}</span>` : ''}</button>`
+      : `<button class="nav-item" data-page="${n.id}"><span class="ico">${n.icon}</span>${n.label}${n.id === 'orders' ? `<span class="badge">${Store.orders().length}</span>` : ''}${n.id === 'site-orders' ? `<span class="badge" id="site-orders-badge" style="display:none">0</span>` : ''}</button>`
     ).join('');
     $$('.nav-item').forEach(b => b.onclick = () => { go(b.dataset.page); $('#sidebar').classList.remove('open'); });
     const initials = (currentUser.name || 'U').split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
@@ -226,7 +250,7 @@
     }
     $('#ai-fab').classList.remove('hidden');
     $('#ai-fab').onclick = toggleAI;
-    updateNotif();
+    refreshSiteOrderIndicators();
   }
 
   function toggleAI() {
@@ -277,17 +301,29 @@
 
   function updateNotif() {
     const low = Store.stocks().filter(s => s.qty <= s.min).length;
-    $('#notif-dot').style.display = low ? 'block' : 'none';
+    const web = unreadSiteOrders().length;
+    $('#notif-dot').style.display = (low || web) ? 'block' : 'none';
+  }
+
+  function refreshSiteOrderIndicators() {
+    const badge = $('#site-orders-badge');
+    const count = unreadSiteOrders().length;
+    if (badge) { badge.textContent = count; badge.style.display = count ? 'inline-block' : 'none'; }
+    updateNotif();
   }
 
   function showNotifications() {
     const low = Store.stocks().filter(s => s.qty <= s.min);
     const late = Store.orders().filter(o => o.step < 5).length;
+    const web = unreadSiteOrders();
     UI.modal('Notifications', `<div class="stack">
+      <div class="card"><h3>${web.length} commande(s) du site à traiter</h3><div class="muted small">${web.length ? 'Ouvrez la section « Commandes du site » pour voir les détails et les coordonnées du client.' : 'Aucune nouvelle demande reçue.'}</div>${web.length ? '<button class="btn primary sm" id="open-web-orders" style="margin-top:8px">Voir les commandes du site</button>' : ''}</div>
       <div class="card"><h3>${late} commande(s) en cours</h3><div class="muted small">Suivez l’avancement dans Production.</div></div>
       <div class="card"><h3>${low.length} stock(s) critique(s)</h3>${low.length ? low.map(s => `<div class="row"><span>${UI.esc(s.name)}</span><span class="chip warn">${s.qty} ${UI.esc(s.unit)} restants</span></div>`).join('') : '<div class="muted small">Aucune alerte.</div>'}</div>
     </div>`, `<button class="btn ghost" id="close">Fermer</button>`);
     $('#close').onclick = () => $('#modal-root').innerHTML = '';
+    const open = $('#open-web-orders');
+    if (open) open.onclick = () => { $('#modal-root').innerHTML = ''; go('site-orders'); };
   }
 
   function go(p) {
@@ -296,7 +332,7 @@
     const t = TITLES[p] || [p, ''];
     $('#page-title').textContent = t[0];
     $('#page-subtitle').textContent = t[1];
-    ({ home: vHome, quotes: vQuotes, orders: vOrders, production: vProduction,
+    ({ home: vHome, quotes: vQuotes, orders: vOrders, 'site-orders': vSiteOrders, production: vProduction,
        history: vHistory, clients: vClients, invoices: vInvoices, payments: vPayments,
        cash: vCash, credits: vCredits, stocks: vStocks, designs: vDesigns,
        motifs: vMotifs, galerie: vGallery, catalogue: vCatalogue, settings: vSettings, about: vAbout }[p] || vHome)();
@@ -582,6 +618,90 @@
       </div>`;
     $('#new-order').onclick = newOrderModal;
     $$('[data-ord]').forEach(b => b.onclick = () => { selectedOrder = b.dataset.ord; go('production'); });
+  }
+
+  /* ---------- Commandes reçues depuis le site web ---------- */
+  function vSiteOrders() {
+    const list = siteOrders();
+    const unread = list.filter(o => !o.seen).length;
+    const today = Store.today();
+    const todayCount = list.filter(o => String(o.at || '').slice(0, 10) === today).length;
+    const cards = list.map(o => {
+      const c = o.client || {};
+      const ref = o.ref || o.id;
+      const items = Array.isArray(o.items) ? o.items : [];
+      const details = Array.isArray(o.details) ? o.details : [];
+      const phone = String(c.phone || '').replace(/[^\d+]/g, '');
+      const wa = phone ? 'https://wa.me/' + phone.replace(/^\+/, '') : '';
+      const reply = 'Bonjour ' + (c.name || '') + ', HaiBer a bien reçu votre demande ' + ref + '. Nous vous contacterons très vite.';
+      return `<article class="site-order-card${o.seen ? '' : ' is-new'}">
+        <div class="site-order-head">
+          <div>
+            <div class="site-order-ref">${UI.esc(ref)}</div>
+            <h3>${UI.esc(o.type || 'Commande du site')}</h3>
+            <div class="small muted">${UI.esc(new Date(o.at || Date.now()).toLocaleString('fr-FR'))} · ${UI.esc(o.source || 'Site web')}</div>
+          </div>
+          ${o.seen ? '<span class="chip">Traité</span>' : '<span class="chip warn">Nouveau</span>'}
+        </div>
+        <div class="site-order-client">
+          <div><b>Nom du client</b><span>${UI.esc(c.name || '—')}</span></div>
+          <div><b>Téléphone</b><span>${UI.esc(c.phone || '—')}</span></div>
+          <div><b>E-mail</b><span>${UI.esc(c.email || '—')}</span></div>
+          <div><b>Référence</b><span>${UI.esc(ref)}</span></div>
+        </div>
+        ${items.length ? `<table class="site-order-items"><thead><tr><th>Article</th><th>Catégorie</th><th>Qté</th><th>Montant</th></tr></thead><tbody>${items.map(i => `<tr><td>${UI.esc(i.name || '—')}</td><td>${UI.esc(i.cat || '—')}</td><td>${UI.esc(i.qty || 1)}</td><td>${UI.fcfa(i.lineTotal || 0)}</td></tr>`).join('')}</tbody></table>` : ''}
+        ${details.length ? `<div class="small">${details.map(d => `<div><b>${UI.esc(d[0])} :</b> ${UI.esc(d[1])}</div>`).join('')}</div>` : ''}
+        <div class="row"><b>Total estimé</b><b>${UI.fcfa(o.total || 0)}</b></div>
+        <details style="margin-top:8px"><summary class="small">Message complet envoyé par le client</summary><div class="site-order-msg">${UI.esc(o.message || '')}</div></details>
+        <div class="site-order-actions">
+          ${wa ? `<a class="btn sm primary" href="${wa}?text=${encodeURIComponent(reply)}" target="_blank" rel="noopener">💬 Contacter le client</a>` : ''}
+          ${o.seen ? '' : `<button class="btn sm ghost" data-site-read="${UI.esc(o.id)}">Marquer comme traité</button>`}
+          <button class="btn sm ghost" data-site-quote="${UI.esc(o.id)}">Créer un devis</button>
+          <button class="btn sm ghost" data-site-del="${UI.esc(o.id)}">Supprimer</button>
+        </div>
+      </article>`;
+    }).join('');
+
+    $('#content').innerHTML = `
+      <div class="grid kpi">
+        <div class="kpi-card"><b>${list.length}</b><span>Demandes reçues du site</span></div>
+        <div class="kpi-card"><b>${unread}</b><span>À traiter</span></div>
+        <div class="kpi-card"><b>${todayCount}</b><span>Reçues aujourd’hui</span></div>
+        <div class="kpi-card"><b>${UI.fcfa(list.reduce((a, o) => a + (o.total || 0), 0))}</b><span>Total estimé</span></div>
+      </div>
+      <div class="card-head" style="margin-top:14px"><h2>Commandes du site web</h2>
+        <div class="row">
+          <button class="btn ghost" id="site-refresh">Actualiser</button>
+          <button class="btn ghost" id="site-all-read">Tout marquer comme traité</button>
+          <a class="btn primary" href="https://haibermultiservices564-gif.github.io/haiber-site/" target="_blank" rel="noopener">Ouvrir le site ↗</a>
+        </div>
+      </div>
+      <div class="small muted">Les demandes envoyées depuis la boutique ou le devis en ligne apparaissent ici automatiquement. Chaque fiche contient la référence, les articles, le montant estimé et les coordonnées du client.</div>
+      <div class="site-order-list">${cards || '<div class="card">Aucune commande reçue pour le moment. Envoyez une demande depuis le site web HaiBer pour la voir apparaître ici.</div>'}</div>`;
+
+    $('#site-refresh').onclick = () => { refreshSiteOrderIndicators(); vSiteOrders(); UI.toast('Commandes du site actualisées'); };
+    $('#site-all-read').onclick = () => {
+      saveSiteOrders(siteOrders().map(o => Object.assign({}, o, { seen: true })));
+      refreshSiteOrderIndicators(); vSiteOrders(); UI.toast('Toutes les demandes sont marquées traitées');
+    };
+    $$('[data-site-read]').forEach(b => b.onclick = () => setSiteOrderSeen(b.dataset.siteRead, true));
+    $$('[data-site-del]').forEach(b => b.onclick = () => {
+      saveSiteOrders(siteOrders().filter(o => o.id !== b.dataset.siteDel));
+      refreshSiteOrderIndicators(); vSiteOrders(); UI.toast('Demande supprimée');
+    });
+    $$('[data-site-quote]').forEach(b => b.onclick = () => {
+      const o = siteOrders().find(x => x.id === b.dataset.siteQuote);
+      if (!o) return;
+      quoteDraft = {
+        module: 'conception', designType: (o.type || 'Commande site') + ' · ' + (o.ref || o.id),
+        hours: 2, revisions: 0, bat: true, marge: Store.orgSettings().margeDefaut || 30,
+        remise: 0, express: false, depositPct: 30,
+        notes: (o.message || '').slice(0, 600)
+      };
+      go('quotes');
+      UI.toast('Demande du site transférée dans le devis');
+    });
+    refreshSiteOrderIndicators();
   }
 
   /* ---------- Production ---------- */
@@ -1571,6 +1691,21 @@
   /* ---------- Init ---------- */
   function init() {
     try { const t = localStorage.getItem('hb_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+    let knownSiteOrders = siteOrders().length;
+    window.addEventListener('storage', (e) => {
+      if (e.key !== SITE_ORDERS_KEY) return;
+      const list = siteOrders();
+      refreshSiteOrderIndicators();
+      if (currentUser && page === 'site-orders') vSiteOrders();
+      if (currentUser && list.length > knownSiteOrders) {
+        UI.toast('Nouvelle commande reçue depuis le site web');
+      }
+      knownSiteOrders = list.length;
+    });
+    window.addEventListener('focus', () => {
+      refreshSiteOrderIndicators();
+      if (currentUser && page === 'site-orders') vSiteOrders();
+    });
     login();
   }
 
