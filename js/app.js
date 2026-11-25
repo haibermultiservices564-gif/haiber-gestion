@@ -89,6 +89,7 @@
 
   function login() {
     const users = Store.users(), demo = Store.isDemo();
+    $('#login-root').setAttribute('role', 'main');
     $('#login-root').innerHTML = `<div class="login-wrap"><div class="login-card">
       <div class="login-logo">${UI.logo()}</div>
       <h1>HAIBER</h1>
@@ -197,6 +198,7 @@
 
   function startApp() {
     $('#login-root').innerHTML = '';
+    $('#login-root').removeAttribute('role');
     $('#app-root').classList.remove('hidden');
     renderShell();
     go('home');
