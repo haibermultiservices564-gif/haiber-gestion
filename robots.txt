@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://haibermultiservices564-gif.github.io/haiber-gestion/sitemap.xml
