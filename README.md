@@ -2,7 +2,7 @@
 
 Application de gestion **HaiBer Multi-Services** — version autonome, hors ligne, adaptée de `Touch Unique Gestion` en conservant toutes les mises à jour (addendum Burkina Faso, sortie du mode démo, interfaces externes).
 
-HaiBer — **« Votre communication, notre mission ! »** — **support client principal : +226 06 87 97 10** (https://wa.me/2266879710). Identité reprise de vos fichiers : logo officiel `LOGO HB PNG.png`, bleu `#3A4F9E`, magenta `#E21481`, orange `#F88F25`. L’APK porte la version **1.3** (`versionCode 4`) et utilise le vrai logo comme icône de lancement, dans l’APK comme dans le site web.
+HaiBer — **« Votre communication, notre mission ! »** — **support client principal : +226 06 87 97 10** (https://wa.me/22606879710). Identité reprise de vos fichiers : logo officiel `LOGO HB PNG.png`, bleu `#3A4F9E`, magenta `#E21481`, orange `#F88F25`. L’APK porte la version **1.3** (`versionCode 4`) et utilise le vrai logo comme icône de lancement, dans l’APK comme dans le site web.
 
 ### En ligne
 
@@ -13,7 +13,7 @@ Application web : **https://haibermultiservices564-gif.github.io/haiber-gestion/
 | Information | Valeur |
 |---|---|
 | Tagline | « Votre communication, notre mission ! » |
-| WhatsApp principal (support HaiBer) | **+226 06 87 97 10** — https://wa.me/2266879710 |
+| WhatsApp principal (support HaiBer) | **+226 06 87 97 10** — https://wa.me/22606879710 |
 | Autre contact | **+226 60 28 31 31** — `tel:+22660283131` |
 | E-mail | **haibermultiservices@gmail.com** |
 | Atelier | **Cissin, non loin de la boulangerie Wend-Konta, Ouagadougou, Burkina Faso** |
