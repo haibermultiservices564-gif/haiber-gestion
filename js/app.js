@@ -108,7 +108,7 @@
       ${demo ? '<button class="btn teal block" id="setup-start" style="margin-top:8px">⚙ Configurer mon atelier</button>' : ''}
       <div class="login-hint">${demo
         ? 'Données fictives de démonstration. Aucune donnée n’est envoyée.'
-        : 'Données de votre atelier, conservées sur cet appareil. Sauvegardez régulièrement via Réglages.'}<br>Support HaiBer : <a href="https://wa.me/2266879710" target="_blank">+226 06 87 97 10</a></div>
+        : 'Données de votre atelier, conservées sur cet appareil. Sauvegardez régulièrement via Réglages.'}<br>Support HaiBer : <a href="https://wa.me/22606879710" target="_blank">+226 06 87 97 10</a></div>
     </div></div>`;
     $('#go').onclick = () => {
       if (!demo) {
@@ -977,7 +977,7 @@
       const msg = 'Bonjour HaiBer, je souhaite commander : ' + p.name + '\n' +
         Object.entries(p.details || {}).filter(([, v]) => v && v !== '—').map(([k, v]) => '• ' + k + ' : ' + v).join('\n') +
         '\nPrix indicatif : ' + UI.fcfa(p.price) + ' / ' + p.unit + '\nMerci de me préparer un devis.';
-      window.open('https://wa.me/2266879710?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      window.open('https://wa.me/22606879710?text=' + encodeURIComponent(msg), '_blank', 'noopener');
     };
   }
 
@@ -1238,10 +1238,9 @@
 
   /* ---------- Caisse comptoir ---------- */
   function waLink(phone, message) {
-    let digits = String(phone || '').replace(/[^0-9]/g, '');
-    // WhatsApp Business attended +226XXXXXXX : le 0 national de
-    // « +226 06 87 97 10 » doit être retiré -> https://wa.me/2266879710
-    if (/^2260\d{7}$/.test(digits)) digits = '226' + digits.slice(4);
+    const digits = String(phone || '').replace(/[^0-9]/g, '');
+    // Le compte WhatsApp Business HaiBer est enregistré avec le 0 national :
+    // +226 06 87 97 10 -> https://wa.me/22606879710
     return 'https://wa.me/' + digits + '?text=' + encodeURIComponent(message);
   }
 
